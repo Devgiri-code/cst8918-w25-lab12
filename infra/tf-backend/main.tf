@@ -1,43 +1,21 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-  }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-resource "azurerm_resource_group" "backend" {
-  name     = "lab12-tfstate-rg"
+resource "azurerm_resource_group" "app" {
+  name     = "lab12-app-rg"
   location = "eastus"
 }
 
-resource "azurerm_storage_account" "backend" {
-  name                     = "lab12tfstate${substr(md5(azurerm_resource_group.backend.id), 0, 8)}"
-  resource_group_name      = azurerm_resource_group.backend.name
-  location                 = azurerm_resource_group.backend.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-}
+resource "azurerm_kubernetes_cluster" "aks" {
+  name                = "lab12-aks"
+  location            = azurerm_resource_group.app.location
+  resource_group_name = azurerm_resource_group.app.name
+  dns_prefix          = "lab12aks"
 
-resource "azurerm_storage_container" "backend" {
-  name                  = "tfstate"
-  storage_account_name  = azurerm_storage_account.backend.name
-  container_access_type = "private"
-}
+  default_node_pool {
+    name       = "default"
+    node_count = 1
+    vm_size    = "Standard_D2_v2"
+  }
 
-output "storage_account_name" {
-  value = azurerm_storage_account.backend.name
-}
-
-output "container_name" {
-  value = azurerm_storage_container.backend.name
-}
-
-output "resource_group_name" {
-  value = azurerm_resource_group.backend.name
+  identity {
+    type = "SystemAssigned"
+  }
 }

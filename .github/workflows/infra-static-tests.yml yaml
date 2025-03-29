@@ -1,5 +1,4 @@
 name: Terraform Static Analysis
-
 on:
   push:
     branches: [ "**" ]
@@ -7,29 +6,15 @@ on:
       - 'infra/**'
       - '.github/workflows/infra-static-tests.yml'
   workflow_dispatch:
-
 jobs:
   static-analysis:
-    name: Static Analysis
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.0
-
+      - uses: actions/checkout@v3
       - name: Terraform Format
-        id: fmt
         run: terraform fmt -check -recursive
-
       - name: Install TFLint
-        run: |
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-
+        run: curl -sSL https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
       - name: Run TFLint
         working-directory: ./infra/tf-app
         run: |

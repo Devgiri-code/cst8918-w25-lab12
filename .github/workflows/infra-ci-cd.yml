@@ -1,37 +1,39 @@
-name: Terraform Static Analysis
-
+name: Terraform CI/CD
 on:
   push:
-    branches: [ "**" ]
+    branches: [ "main" ]
     paths:
       - 'infra/**'
-      - '.github/workflows/infra-static-tests.yml'
-  workflow_dispatch:
-
+      - '.github/workflows/infra-ci-cd.yml'
+  pull_request:
+    branches: [ "main" ]
+permissions:
+  id-token: write
+  contents: read
 jobs:
-  static-analysis:
-    name: Static Analysis
+  terraform:
     runs-on: ubuntu-latest
-
+    environment: production
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@v2
+      - uses: actions/checkout@v3
+      - name: Azure Login
+        uses: azure/login@v1
         with:
-          terraform_version: 1.5.0
-
-      - name: Terraform Format
-        id: fmt
-        run: terraform fmt -check -recursive
-
-      - name: Install TFLint
-        run: |
-          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-
-      - name: Run TFLint
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - uses: hashicorp/setup-terraform@v2
+      - name: Terraform Init
         working-directory: ./infra/tf-app
-        run: |
-          tflint --init
-          tflint --module
+        run: terraform init
+      - name: Terraform Validate
+        working-directory: ./infra/tf-app
+        run: terraform validate
+      - name: Terraform Plan
+        working-directory: ./infra/tf-app
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color
+      - name: Terraform Apply
+        working-directory: ./infra/tf-app
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve
