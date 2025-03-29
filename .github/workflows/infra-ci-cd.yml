@@ -1,4 +1,5 @@
 name: Terraform CI/CD
+
 on:
   push:
     branches: [ "main" ]
@@ -7,32 +8,50 @@ on:
       - '.github/workflows/infra-ci-cd.yml'
   pull_request:
     branches: [ "main" ]
+
+env:
+  ARM_CLIENT_ID: "4f032076-a5ad-4f8c-b492-36eaf533fdcb"
+  ARM_CLIENT_SECRET: "22b4ad7d-ef76-4a84-ae90-7eafcde777f3"
+  ARM_TENANT_ID: "e39de75c-b796-4bdd-888d-f3d21250910c"
+  ARM_SUBSCRIPTION_ID: "45a61a7b-f92a-4559-8168-1d379738daf3"
+
 permissions:
   id-token: write
   contents: read
+
 jobs:
   terraform:
     runs-on: ubuntu-latest
     environment: production
     steps:
       - uses: actions/checkout@v3
+      
       - name: Azure Login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - uses: hashicorp/setup-terraform@v2
+          client-id: "4f032076-a5ad-4f8c-b492-36eaf533fdcb"
+          tenant-id: "e39de75c-b796-4bdd-888d-f3d21250910c"
+          subscription-id: "45a61a7b-f92a-4559-8168-1d379738daf3"
+          client-secret: "22b4ad7d-ef76-4a84-ae90-7eafcde777f3"
+          
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.0"
+          
       - name: Terraform Init
         working-directory: ./infra/tf-app
         run: terraform init
+        
       - name: Terraform Validate
         working-directory: ./infra/tf-app
         run: terraform validate
+        
       - name: Terraform Plan
         working-directory: ./infra/tf-app
         if: github.event_name == 'pull_request'
         run: terraform plan -no-color
+        
       - name: Terraform Apply
         working-directory: ./infra/tf-app
         if: github.ref == 'refs/heads/main'
