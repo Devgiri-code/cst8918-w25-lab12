@@ -9,8 +9,8 @@ terraform {
   backend "azurerm" {
     resource_group_name  = "lab12-tfstate-rg"
     storage_account_name = "lab12tfstated0f0006f" # Replace with your actual storage account name
-    container_name      = "tfstate"
-    key                 = "terraform.tfstate"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
   }
 }
 
